@@ -144,6 +144,7 @@
     <button class="add" data-type="printer3d">3D프린터 테이블</button>
     <button class="add" data-type="doorGlass">유리문 <span>벽 스냅</span></button>
     <button class="add" data-type="doorGlassD">유리 양문 <span>벽 스냅</span></button>
+    <button class="add" data-type="doorFold">폴딩도어 <span>벽 스냅</span></button>
     <button class="add" data-type="doorSolid">일반 출입문 <span>벽 스냅</span></button>
     <button class="add" data-type="whiteboard">화이트보드 <span>벽 스냅</span></button>
     <button class="add" data-type="pegboard">타공판 <span>벽 스냅</span></button>
@@ -624,6 +625,33 @@ function buildDoorGlassD(){
   box(2.0,.02,.34,MAT.gray,0,.01,-.05,g);
   return g;
 }
+/* 폴딩도어 (접이식 유리문 · 살짝 접힌 지그재그 형태) — 벽 스냅 */
+function makeDoorFold(n){
+  const g = new THREE.Group();
+  const p = .615, a = .21, ph = 2.1;           // 패널폭 · 접힘각(~12°) · 문높이
+  const d = p*Math.sin(a), sx = p*Math.cos(a); // 지그재그 깊이 · 패널 수평 투영폭
+  const span = n*sx;
+  box(span+.16, .12, .14, MAT.frame, 0, ph+.08, .02, g);            // 상부 트랙
+  box(.08, ph+.1, .12, MAT.frame, -span/2-.03, (ph+.1)/2, 0, g);    // 좌 기둥
+  box(.08, ph+.1, .12, MAT.frame, span/2+.03, (ph+.1)/2, 0, g);     // 우 기둥
+  box(span+.16, .02, .2, MAT.gray, 0, .01, .03, g);                 // 바닥 레일
+  for(let i=0;i<n;i++){
+    const x1 = -span/2 + i*sx,     z1 = (i%2===0) ? 0 : d;
+    const x2 = -span/2 + (i+1)*sx, z2 = (i%2===0) ? d : 0;
+    const pan = new THREE.Group();
+    pan.position.set((x1+x2)/2, 0, (z1+z2)/2 + .02);
+    pan.rotation.y = -Math.atan2(z2-z1, x2-x1);
+    box(p-.04, ph, .05, MAT.frame, 0, ph/2, 0, pan);
+    const gl = box(p-.16, ph-.5, .02, MAT.glass, 0, ph/2+.18, 0, pan); gl.castShadow=false;
+    box(p-.14, .38, .045, MAT.doorWood, 0, .3, 0, pan, true);       // 하부 킥판(주 색상)
+    g.add(pan);
+    if(i<n-1) cyl(.02,.02,ph-.1,MAT.gray,x2,ph/2,z2+.02,g,false,8); // 힌지 축
+  }
+  box(.03,.3,.05,MAT.darkGray,-span/2+.09,1.05,d/2+.09,g);          // 손잡이
+  return g;
+}
+function buildDoorFold4(){ return makeDoorFold(4); }
+function buildDoorFold6(){ return makeDoorFold(6); }
 function buildDoorSolid(){
   const g = new THREE.Group();
   box(.07,2.12,.3,MAT.frame,-.47,1.06,-.05,g);
@@ -690,6 +718,9 @@ const FACTORY = {
   printer3d:{ name:'3D프린터 테이블', price:0, variants:[{k:'std',label:'기본',dims:'1.2×0.6m',build:buildPrinter3d}]},
   doorGlass:{ name:'유리문', price:0, variants:[{k:'std',label:'기본',dims:'폭 1.0m',build:buildDoorGlass, snap:true}]},
   doorGlassD:{ name:'유리 양문', price:0, variants:[{k:'std',label:'기본',dims:'폭 1.9m',build:buildDoorGlassD, snap:true}]},
+  doorFold:{ name:'폴딩도어', price:0, variants:[
+    {k:'f4',label:'4짝',dims:'폭 2.4m · 접이식',build:buildDoorFold4, snap:true},
+    {k:'f6',label:'6짝',dims:'폭 3.6m · 접이식',build:buildDoorFold6, snap:true}]},
   doorSolid:{ name:'일반 출입문', price:0, variants:[{k:'std',label:'기본',dims:'폭 0.9m',build:buildDoorSolid, snap:true}]},
   whiteboard:{ name:'화이트보드', price:0, variants:[{k:'std',label:'기본',dims:'2.4×1.2m',build:buildWhiteboard, snap:true}]},
   pegboard:{ name:'타공판', price:0, variants:[{k:'std',label:'기본',dims:'2.0×1.5m',build:buildPegboard, snap:true}]},
